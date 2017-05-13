@@ -25,6 +25,7 @@ type itimeout interface {
 	Timeout() bool
 }
 type Request struct {
+	HttpClient        *http.Client
 	headers           []headerTuple
 	cookies           []*http.Cookie
 	Method            string
@@ -274,8 +275,19 @@ func (r Request) WithCookie(c *http.Cookie) Request {
 }
 
 func (r Request) Do() (*Response, error) {
-	var client = DefaultClient
+
+	// set client. Use default http client if request does not have one
+	var client = r.HttpClient
+	if client == nil {
+		client = DefaultClient
+	}
+
+	// set transport, use default transport if request client is not set
 	var transport = DefaultTransport
+	if r.HttpClient != nil {
+		transport = r.HttpClient.Transport
+	}
+
 	var resUri string
 	var redirectFailed bool
 
